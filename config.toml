@@ -1,0 +1,12 @@
+# Model Configuration
+[model]
+name = "Qwen/Qwen2.5-0.5B"        # Model identifier
+
+# Prompt Settings
+[prompt]
+example_prompt = "Once upon a time, there was a"
+max_prompts = 9
+
+# Display Settings
+[display]
+tokens_to_show = 30          # Number of tokens to display in preview

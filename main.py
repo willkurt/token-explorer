@@ -8,18 +8,35 @@ from textual.widgets import Footer, Header, Static, DataTable
 from textwrap import dedent
 import sys
 import argparse
+import tomli 
 
-EXAMPLE_PROMPT = "Once upon a time, there was a"
-TOKENS_TO_SHOW = 30
-MAX_PROMPTS = 9
+# Replace the constants with config
+def load_config():
+    try:
+        with open("config.toml", "rb") as f:
+            return tomli.load(f)
+    except FileNotFoundError:
+        print("Config file not found, using default values")
+        return {
+            "model": "Qwen/Qwen2.5-0.5B",
+            "example_prompt": "Once upon a time, there was a",
+            "tokens_to_show": 30,
+            "max_prompts": 9
+        }
 
-
+config = load_config()
+print(config)
+MODEL_NAME = config["model"]["name"]
+EXAMPLE_PROMPT = config["prompt"]["example_prompt"]
+TOKENS_TO_SHOW = config["display"]["tokens_to_show"]
+MAX_PROMPTS = config["prompt"]["max_prompts"]
 
 class TokenExplorer(App):
     """Main application class."""
 
     display_modes = cycle(["prompt", "prob", "entropy"])
     display_mode = reactive(next(display_modes))
+
     BINDINGS = [("e", "change_display_mode", "Change display mode"),
                 ("left", "pop_token", "Pop token"),
                 ("right", "append_token", "Append token"),
@@ -31,7 +48,7 @@ class TokenExplorer(App):
         # Add support for multiple prompts.
         self.prompts = [prompt]
         self.prompt_index = 0
-        self.explorer = Explorer()
+        self.explorer = Explorer(MODEL_NAME)
         self.explorer.set_prompt(prompt)
         self.rows = self._top_tokens_to_rows(
             self.explorer.get_top_n_tokens(n=TOKENS_TO_SHOW)

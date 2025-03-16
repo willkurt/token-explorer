@@ -25,7 +25,6 @@ def load_config():
         }
 
 config = load_config()
-print(config)
 MODEL_NAME = config["model"]["name"]
 EXAMPLE_PROMPT = config["prompt"]["example_prompt"]
 TOKENS_TO_SHOW = config["display"]["tokens_to_show"]
@@ -41,8 +40,10 @@ class TokenExplorer(App):
                 ("left", "pop_token", "Pop token"),
                 ("right", "append_token", "Append token"),
                 ("d", "add_prompt", "Add prompt"),
+                ("a", "remove_prompt", "Remove prompt"),
                 ("w", "increment_prompt", "Increment prompt"),
                 ("s", "decrement_prompt", "Decrement prompt")]
+    
     def __init__(self, prompt=EXAMPLE_PROMPT):
         super().__init__()
         # Add support for multiple prompts.
@@ -76,22 +77,22 @@ class TokenExplorer(App):
     def _render_prompt(self):
         if self.display_mode == "entropy":
             entropy_legend = "".join([
-                f"[on {entropy_to_color(i/10)}] {i/10:.2f} "
+                f"[on {entropy_to_color(i/10)}] {i/10:.2f} [/on]"
                 for i in range(11)
                 ])
             prompt_legend = f"[bold]Token entropy:[/bold]{entropy_legend}"
             token_entropies = self.explorer.get_prompt_token_normalized_entropies()
             token_strings = self.explorer.get_prompt_tokens_strings()
-            prompt_text = "".join(f"[on {entropy_to_color(entropy)}]{token}" for token, entropy in zip(token_strings, token_entropies))
+            prompt_text = "".join(f"[on {entropy_to_color(entropy)}]{token}[/on]" for token, entropy in zip(token_strings, token_entropies))
         elif self.display_mode == "prob":
             prob_legend = "".join([
-                f"[on {probability_to_color(i/10)}] {i/10:.2f} "
+                f"[on {probability_to_color(i/10)}] {i/10:.2f} [/on]"
                 for i in range(11)
                 ])
             prompt_legend = f"[bold]Token prob:[/bold]{prob_legend}"
             token_probs = self.explorer.get_prompt_token_probabilities()
             token_strings = self.explorer.get_prompt_tokens_strings()
-            prompt_text = "".join(f"[on {probability_to_color(prob)}]{token}" for token, prob in zip(token_strings, token_probs))
+            prompt_text = "".join(f"[on {probability_to_color(prob)}]{token}[/on]" for token, prob in zip(token_strings, token_probs))
         else:
             prompt_text = self.explorer.get_prompt()
             prompt_legend = ""
@@ -119,6 +120,14 @@ class TokenExplorer(App):
             self.prompt_index = (self.prompt_index + 1) % len(self.prompts)
             self.explorer.set_prompt(self.prompts[self.prompt_index])
             self.query_one("#results", Static).update(self._render_prompt())
+
+    def action_remove_prompt(self):
+        if len(self.prompts) > 1:
+            self.prompts.pop(self.prompt_index)
+            self.prompt_index = (self.prompt_index - 1) % len(self.prompts)
+            self.explorer.set_prompt(self.prompts[self.prompt_index])
+            self.query_one("#results", Static).update(self._render_prompt())
+
     
     def action_increment_prompt(self):
         self.prompt_index = (self.prompt_index + 1) % len(self.prompts)
@@ -165,7 +174,7 @@ if __name__ == "__main__":
     parser.add_argument('--input', '-i', type=str, help='Path to input text file')
     args = parser.parse_args()
 
-    prompt = None
+    prompt = EXAMPLE_PROMPT
     if args.input:
         try:
             with open(args.input, 'r') as f:
@@ -176,7 +185,6 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Error reading file: {e}")
             sys.exit(1)
-    print(prompt)
     app = TokenExplorer(prompt)
     app.run()
 

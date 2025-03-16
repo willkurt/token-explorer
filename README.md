@@ -123,17 +123,6 @@ Here's the probability view for the new prompt:
 
 You can see both that we *did* still get the correct answer, and that the path I chose was fairly low probability for a bit. So we've learned something interesting! Even if we perturb the prompt to a low-probability path in the middle of it's reasoning, we still get the correct answer!
 
-
-
-
-
-
-
-
-
-
-
-
 ## Configuration
 
-The configuration is done in the `config.toml` file.
+The configuration is done in the `config.toml` file. The only thing you might want to change is the `model` section, which defaults to `Qwen/Qwen2.5-0.5B`. However Token-Explorer is *far* from optimized for performance, so it's best to use a smaller model for now.

@@ -8,6 +8,7 @@ dependencies = [
     "httpx>=0.28.1",
     "textual>=2.1.2",
     "textual-dev>=1.7.0",
+    "tomli>=2.2.1",
     "torch>=2.6.0",
     "transformers>=4.49.0",
 ]

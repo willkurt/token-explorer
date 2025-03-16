@@ -5,7 +5,7 @@ The Explorer class manages the prompt internally and handles all interactions wi
 """
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
-
+import numpy as np
 
 class Explorer:
     def __init__(self, model_name="Qwen/Qwen2.5-0.5B"):
@@ -34,6 +34,80 @@ class Explorer:
         self.prompt_tokens = self.tokenizer.encode(prompt_text)
         return self
     
+
+    def get_prompt_token_probabilities(self):
+        """
+        Calculate the probability of each token in the sequence given its preceding context,
+        using a single forward pass.
+        
+        Args:
+            self: The Explorer object
+        Returns:
+            list: A list of probabilities for each token in the sequence
+        """
+        # Convert token IDs to tensor and create input
+        input_ids = torch.tensor([self.prompt_tokens])
+        
+        # Get the model's output in a single forward pass
+        with torch.no_grad():
+            outputs = self.model(input_ids)
+            logits = outputs.logits[0]  # Shape: [sequence_length, vocab_size]
+        
+        # Calculate probabilities for each position
+        token_probabilities = []
+        
+        # First token has no context, so we'll use None or some default
+        token_probabilities.append(0.5)
+        
+        # For each position after the first
+        for pos in range(len(self.prompt_tokens) - 1):
+            # The logits at position 'pos' predict the token at position 'pos+1'
+            position_logits = logits[pos]
+            position_probs = torch.softmax(position_logits, dim=-1)
+            
+            # Get probability of the actual next token
+            next_token_id = self.prompt_tokens[pos + 1]
+            next_token_prob = position_probs[next_token_id].item()
+            
+            token_probabilities.append(next_token_prob)
+        return token_probabilities
+    
+    def get_prompt_token_normalized_entropies(self):
+        # Convert token IDs to tensor and create input
+        input_ids = torch.tensor([self.prompt_tokens])
+        
+        # Get the model's output in a single forward pass
+        with torch.no_grad():
+            outputs = self.model(input_ids)
+            logits = outputs.logits[0]  # Shape: [sequence_length, vocab_size]
+        
+        # Calculate normalized entropy for each position
+        normalized_entropies = []
+        
+        # First token has no context, so we'll use None or some default
+        normalized_entropies.append(0.5)
+        
+        # For each position after the first
+        for pos in range(len(self.prompt_tokens) - 1):
+            # The logits at position 'pos' predict the token at position 'pos+1'
+            position_logits = logits[pos]
+            position_probs = torch.softmax(position_logits, dim=-1)
+            
+            # Calculate entropy: -sum(p * log(p))
+            # We filter out zeros to avoid log(0) issues
+            probs_np = position_probs.cpu().numpy()
+            non_zero_probs = probs_np[probs_np > 0]
+            entropy = -np.sum(non_zero_probs * np.log2(non_zero_probs))
+            
+            # Normalize by maximum possible entropy (log2 of vocabulary size)
+            max_entropy = np.log2(len(position_probs))
+            normalized_entropy = entropy / max_entropy
+            
+            normalized_entropies.append(normalized_entropy)
+        
+        return normalized_entropies
+
+
     def get_prompt(self):
         """
         Get the current prompt text.
@@ -51,6 +125,12 @@ class Explorer:
             List of token ids representing the current prompt
         """
         return self.prompt_tokens
+    
+    def get_prompt_tokens_strings(self):
+        """
+        Get the current prompt tokens as a string.
+        """
+        return [self.tokenizer.decode(token) for token in self.prompt_tokens]
     
     def pop_token(self):
         """
@@ -158,3 +238,6 @@ if __name__ == "__main__":
     print("Popping token:", explorer.pop_token())
     print("-----")
     print("Prompt:", explorer.get_prompt()) 
+    print("Token probabilities:", explorer.get_prompt_token_probabilities())
+    print("-----")
+    print("Token entropies:", explorer.get_prompt_token_normalized_entropies())

@@ -10,9 +10,8 @@ import sys
 import argparse
 
 EXAMPLE_PROMPT = "Once upon a time, there was a"
-# this will be replaced with a function to get the tokenization strings.
-token_strs = EXAMPLE_PROMPT.split(" ")
 TOKENS_TO_SHOW = 30
+MAX_PROMPTS = 9
 
 def probability_to_color(probability, alpha=1.0):
     """
@@ -67,13 +66,20 @@ def entropy_to_color(entropy, alpha=1.0):
 
 class TokenExplorer(App):
     """Main application class."""
-    display_mode = reactive("prompt")
-    display_modes = cycle(["prompt", "prob", "entropy"])
 
+    display_modes = cycle(["prompt", "prob", "entropy"])
+    display_mode = reactive(next(display_modes))
+    BINDINGS = [("e", "change_display_mode", "Change display mode"),
+                ("left", "pop_token", "Pop token"),
+                ("right", "append_token", "Append token"),
+                ("d", "add_prompt", "Add prompt"),
+                ("w", "increment_prompt", "Increment prompt"),
+                ("s", "decrement_prompt", "Decrement prompt")]
     def __init__(self, prompt=EXAMPLE_PROMPT):
         super().__init__()
         # Add support for multiple prompts.
         self.prompts = [prompt]
+        self.prompt_index = 0
         self.explorer = Explorer()
         self.explorer.set_prompt(prompt)
         self.rows = self._top_tokens_to_rows(
@@ -129,7 +135,7 @@ class TokenExplorer(App):
 
 
 {prompt_legend}
-[bold]Prompt[/bold] 1/1 tokens: {len(self.explorer.prompt_tokens)}
+[bold]Prompt[/bold] {self.prompt_index+1}/{len(self.prompts)} tokens: {len(self.explorer.prompt_tokens)}
 """)
     
     def on_mount(self) -> None:
@@ -139,39 +145,52 @@ class TokenExplorer(App):
         table.add_rows(self.rows[1:])
         table.cursor_type = "row"
     
+    def action_add_prompt(self):
+        if len(self.prompts) < MAX_PROMPTS:
+            self.prompts.append(self.explorer.get_prompt())
+            self.prompt_index = (self.prompt_index + 1) % len(self.prompts)
+            self.explorer.set_prompt(self.prompts[self.prompt_index])
+            self.query_one("#results", Static).update(self._render_prompt())
+    
+    def action_increment_prompt(self):
+        self.prompt_index = (self.prompt_index + 1) % len(self.prompts)
+        self.explorer.set_prompt(self.prompts[self.prompt_index])
+        self.query_one("#results", Static).update(self._render_prompt())
 
-    # Pretty sure I can refactor this to use
-    # a better key binding setup.
-    def on_key(self, event) -> None:
-        """Handle key events on the data table."""
+    def action_decrement_prompt(self):
+        self.prompt_index = (self.prompt_index - 1) % len(self.prompts)
+        self.explorer.set_prompt(self.prompts[self.prompt_index])
+        self.query_one("#results", Static).update(self._render_prompt())
+
+    def action_change_display_mode(self):
+        self.display_mode = next(self.display_modes)
+        self.query_one("#results", Static).update(self._render_prompt())
+
+    def action_pop_token(self):
         table = self.query_one(DataTable)
+        self.explorer.pop_token()
+        self.prompts[self.prompt_index] = self.explorer.get_prompt()
+        self.rows = self._top_tokens_to_rows(
+            self.explorer.get_top_n_tokens(n=TOKENS_TO_SHOW)
+            )
+        table.clear()
+        table.add_rows(self.rows[1:])
+        self.query_one("#results", Static).update(self._render_prompt())
+
+    def action_append_token(self):
+        table = self.query_one(DataTable)
+        row_index = table.cursor_row
         
-        # Check if right arrow key was pressed
-        if event.key == "right":
-            # Get the currently selected row index
-            row_index = table.cursor_row
-            
-            if row_index is not None:
-                self.explorer.append_token(self.rows[row_index+1][0])
-                self.query_one("#results", Static).update(self._render_prompt())
-                self.rows = self._top_tokens_to_rows(
-                    self.explorer.get_top_n_tokens(n=TOKENS_TO_SHOW)
-                    )
-                table.clear()
-                #table.add_columns(*self.rows[0])
-                table.add_rows(self.rows[1:])
-        elif event.key == "left":
-            self.explorer.pop_token()
+        if row_index is not None:
+            self.explorer.append_token(self.rows[row_index+1][0])
+            self.prompts[self.prompt_index] = self.explorer.get_prompt()
+            self.query_one("#results", Static).update(self._render_prompt())
             self.rows = self._top_tokens_to_rows(
                 self.explorer.get_top_n_tokens(n=TOKENS_TO_SHOW)
                 )
             table.clear()
             table.add_rows(self.rows[1:])
-            self.query_one("#results", Static).update(self._render_prompt())
-        elif event.key == "e":
-            # this is enough?
-            self.display_mode = next(self.display_modes)
-            self.query_one("#results", Static).update(self._render_prompt())
+        self.query_one("#results", Static).update(self._render_prompt())
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Token Explorer Application')

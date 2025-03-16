@@ -70,9 +70,12 @@ class TokenExplorer(App):
 
     def _refresh_table(self):
         table = self.query_one(DataTable)
+        self.rows = self._top_tokens_to_rows(
+            self.explorer.get_top_n_tokens(n=TOKENS_TO_SHOW)
+            )
         table.clear()
         table.add_rows(self.rows[1:])
-        table.cursor_type = "row"
+        self.query_one("#results", Static).update(self._render_prompt())
             
     def _render_prompt(self):
         if self.display_mode == "entropy":
@@ -120,6 +123,7 @@ class TokenExplorer(App):
             self.prompt_index = (self.prompt_index + 1) % len(self.prompts)
             self.explorer.set_prompt(self.prompts[self.prompt_index])
             self.query_one("#results", Static).update(self._render_prompt())
+            self._refresh_table()
 
     def action_remove_prompt(self):
         if len(self.prompts) > 1:
@@ -127,32 +131,31 @@ class TokenExplorer(App):
             self.prompt_index = (self.prompt_index - 1) % len(self.prompts)
             self.explorer.set_prompt(self.prompts[self.prompt_index])
             self.query_one("#results", Static).update(self._render_prompt())
-
+            self._refresh_table()
     
     def action_increment_prompt(self):
         self.prompt_index = (self.prompt_index + 1) % len(self.prompts)
         self.explorer.set_prompt(self.prompts[self.prompt_index])
         self.query_one("#results", Static).update(self._render_prompt())
+        self._refresh_table()
 
     def action_decrement_prompt(self):
         self.prompt_index = (self.prompt_index - 1) % len(self.prompts)
         self.explorer.set_prompt(self.prompts[self.prompt_index])
         self.query_one("#results", Static).update(self._render_prompt())
+        self._refresh_table()
 
     def action_change_display_mode(self):
         self.display_mode = next(self.display_modes)
         self.query_one("#results", Static).update(self._render_prompt())
 
     def action_pop_token(self):
-        table = self.query_one(DataTable)
-        self.explorer.pop_token()
-        self.prompts[self.prompt_index] = self.explorer.get_prompt()
-        self.rows = self._top_tokens_to_rows(
-            self.explorer.get_top_n_tokens(n=TOKENS_TO_SHOW)
-            )
-        table.clear()
-        table.add_rows(self.rows[1:])
-        self.query_one("#results", Static).update(self._render_prompt())
+        if len(self.explorer.get_prompt_tokens()) > 1:
+            self.explorer.pop_token()
+            self.prompts[self.prompt_index] = self.explorer.get_prompt()
+            self.query_one("#results", Static).update(self._render_prompt())
+            self._refresh_table()
+            
 
     def action_append_token(self):
         table = self.query_one(DataTable)

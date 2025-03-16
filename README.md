@@ -33,7 +33,7 @@ When you start the app you will see your prompt as well as a table of the top 30
 
 ![Starting prompt](./imgs/starting_prompt.png)
 
-The idea of Token-Explorer is to make it very easy to explore the space of possible prompts and token generations from an LLM. To use Token-Explorer it's best to treat your keyboard like you're playing a video game: put your left hand on WASD and your right hand on the arrow keys.
+The idea of Token Explorer is to make it very easy to explore the space of possible prompts and token generations from an LLM. To use Token Explorer it's best to treat your keyboard like you're playing a video game: put your left hand on WASD and your right hand on the arrow keys.
 
 ### Basic Usage
 
@@ -52,7 +52,7 @@ To **quit** the app, you can press `ctrl+q`.
 
 ### Adding prompts
 
-One of the goals of Token-Explorer is to make it easy to play around with alternate methods of prompting. To faciliate this, Token-Explorer allows you to duplicate your current prompt and add it to the list of prompts by pressing 'd'. In this image below we've added a copy of our current prompt to the list of prompts and are now at propmt 2 of 2:
+One of the goals of Token Explorer is to make it easy to play around with alternate methods of prompting. To faciliate this, Token Explorer allows you to duplicate your current prompt and add it to the list of prompts by pressing 'd'. In this image below we've added a copy of our current prompt to the list of prompts and are now at propmt 2 of 2:
 
 ![Adding a prompt](./imgs/add_a_prompt.png)
 
@@ -125,4 +125,4 @@ You can see both that we *did* still get the correct answer, and that the path I
 
 ## Configuration
 
-The configuration is done in the `config.toml` file. The only thing you might want to change is the `model` section, which defaults to `Qwen/Qwen2.5-0.5B`. However Token-Explorer is *far* from optimized for performance, so it's best to use a smaller model for now.
+The configuration is done in the `config.toml` file. The only thing you might want to change is the `model` section, which defaults to `Qwen/Qwen2.5-0.5B`. However Token Explorer is *far* from optimized for performance, so it's best to use a smaller model for now.

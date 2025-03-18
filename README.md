@@ -50,6 +50,8 @@ If you want to go back and reselect the token, you can use the 'left' arrow key 
 
 To **quit** the app, you can press `ctrl+q`.
 
+You can also save your current prompt by pressing `x`. This will save the prompt to the `prompts` folder.
+
 ### Adding prompts
 
 One of the goals of Token Explorer is to make it easy to play around with alternate methods of prompting. To faciliate this, Token Explorer allows you to duplicate your current prompt and add it to the list of prompts by pressing 'd'. In this image below we've added a copy of our current prompt to the list of prompts and are now at propmt 2 of 2:

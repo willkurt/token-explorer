@@ -9,6 +9,7 @@ from textwrap import dedent
 import sys
 import argparse
 import tomli 
+from datetime import datetime
 
 # Replace the constants with config
 def load_config():
@@ -42,7 +43,8 @@ class TokenExplorer(App):
                 ("d", "add_prompt", "Add prompt"),
                 ("a", "remove_prompt", "Remove prompt"),
                 ("w", "increment_prompt", "Increment prompt"),
-                ("s", "decrement_prompt", "Decrement prompt")]
+                ("s", "decrement_prompt", "Decrement prompt"),
+                ("x", "save_prompt", "Save prompt")]
     
     def __init__(self, prompt=EXAMPLE_PROMPT):
         super().__init__()
@@ -156,6 +158,9 @@ class TokenExplorer(App):
             self.query_one("#results", Static).update(self._render_prompt())
             self._refresh_table()
             
+    def action_save_prompt(self):
+        with open(f"prompts/prompt_{self.prompt_index}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt", "w") as f:
+            f.write(self.explorer.get_prompt())
 
     def action_append_token(self):
         table = self.query_one(DataTable)

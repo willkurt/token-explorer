@@ -19,6 +19,15 @@ class Explorer:
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForCausalLM.from_pretrained(model_name)
         
+        # Auto select device (CUDA > MPS > CPU)
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            self.device = torch.device("mps")
+        else:
+            self.device = torch.device("cpu")
+        self.model = self.model.to(self.device)
+        
         # Initialize with empty prompt
         self.prompt_text = ""
         self.prompt_tokens = []
@@ -46,7 +55,7 @@ class Explorer:
             list: A list of probabilities for each token in the sequence
         """
         # Convert token IDs to tensor and create input
-        input_ids = torch.tensor([self.prompt_tokens])
+        input_ids = torch.tensor([self.prompt_tokens]).to(self.device)
         
         # Get the model's output in a single forward pass
         with torch.no_grad():
@@ -74,7 +83,7 @@ class Explorer:
     
     def get_prompt_token_normalized_entropies(self):
         # Convert token IDs to tensor and create input
-        input_ids = torch.tensor([self.prompt_tokens])
+        input_ids = torch.tensor([self.prompt_tokens]).to(self.device)
         
         # Get the model's output in a single forward pass
         with torch.no_grad():
@@ -178,7 +187,7 @@ class Explorer:
         """
         # Get model output for the encoded prompt
         with torch.no_grad():
-            outputs = self.model(torch.tensor([self.prompt_tokens]))
+            outputs = self.model(torch.tensor([self.prompt_tokens]).to(self.device))
             
         # Get logits for the next token
         next_token_logits = outputs.logits[0, -1, :]

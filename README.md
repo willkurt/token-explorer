@@ -1,19 +1,22 @@
 # Token Explorer
 
-Token Explorer allows you to interactively explore the token generation process of an LLM, using a "video game" style interface. Currently you opperate it with one hand on the arrow keys and the other on WASD.
+Token Explorer allows you to interactively explore the token generation process of an LLM, using a "video game" style interface. You can use either arrow keys or vim-style navigation (h/j/k/l) along with WASD keys.
 
 Token explore allows you to:
 - Choose a starting prompt, or provide your own text file.
-- Step through generation one token at a time (use the arrow keys to navigate, pop and append tokens).
+- Step through generation one token at a time using either:
+  * Arrow keys to navigate, pop and append tokens
+  * Vim-style keys: h/l to pop/append, j/k to move up/down
 - View the token probabilities and entropies.
 - Add a copy of your current prompt to the list of prompts.
 - Cycle through the prompts by pressing `w` and `s`.
 - Add and remove prompts from the list with `a` and `d`.
+- Automatically uses the best available device (CUDA > MPS > CPU).
 
 
 ## Running the app
 
-Token Explore uses `uv` for project managament. Please see the [uv docs](https://docs.astral.sh/uv/getting-started/installation/) for more information.
+Token Explore uses `uv` for project management. Please see the [uv docs](https://docs.astral.sh/uv/getting-started/installation/) for more information.
 
 Once you have `uv` installed, you can install the dependencies and run the app with:
 
@@ -37,16 +40,15 @@ The idea of Token Explorer is to make it very easy to explore the space of possi
 
 ### Basic Usage
 
-Use the up and down arrow keys to navigate the table.
+Use the up and down arrow keys to navigate the table. Use 'k'/'j' keys to select the current token so LLM can start generate the next one.
 
 ![Navigating the table](./imgs/navigating_table.png)
 
-Here you can see I've highlighted the token "very" which has a probability of 0.03. Pressing the 'right' arrow key will append this token to the end of your prompt.
-Then it will display the next set of tokens.
+Here you can see I've highlighted the token "very" which has a probability of 0.03. Pressing the right arrow key or 'l' will append this token to the end of your prompt. Then it will display the next set of tokens.
 
 ![Appending a token](./imgs/appending_token.png)
 
-If you want to go back and reselect the token, you can use the 'left' arrow key to pop the token back off the end of the prompt.
+If you want to go back and reselect the token, you can use the left arrow key or 'h' to pop the token back off the end of the prompt.
 
 To **quit** the app, you can press `ctrl+q`.
 

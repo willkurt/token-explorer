@@ -37,14 +37,16 @@ class TokenExplorer(App):
     display_modes = cycle(["prompt", "prob", "entropy"])
     display_mode = reactive(next(display_modes))
 
-    BINDINGS = [("e", "change_display_mode", "Change display mode"),
-                ("left", "pop_token", "Pop token"),
-                ("right", "append_token", "Append token"),
-                ("d", "add_prompt", "Add prompt"),
-                ("a", "remove_prompt", "Remove prompt"),
-                ("w", "increment_prompt", "Increment prompt"),
-                ("s", "decrement_prompt", "Decrement prompt"),
-                ("x", "save_prompt", "Save prompt")]
+    BINDINGS = [("e", "change_display_mode", "Mode"),
+                ("left,h", "pop_token", "Back"),
+                ("right,l", "append_token", "Add"),
+                ("d", "add_prompt", "New"),
+                ("a", "remove_prompt", "Del"),
+                ("w", "increment_prompt", "Next"),
+                ("s", "decrement_prompt", "Prev"),
+                ("x", "save_prompt", "Save"),
+                ("j", "select_next", "Down"),
+                ("k", "select_prev", "Up")]
     
     def __init__(self, prompt=EXAMPLE_PROMPT):
         super().__init__()
@@ -56,6 +58,7 @@ class TokenExplorer(App):
         self.rows = self._top_tokens_to_rows(
             self.explorer.get_top_n_tokens(n=TOKENS_TO_SHOW)
             )
+        self.selected_row = 0  # Track currently selected token row
     
     def _top_tokens_to_rows(self, tokens):
         return [("token_id", "token", "prob")] + [
@@ -77,6 +80,9 @@ class TokenExplorer(App):
             )
         table.clear()
         table.add_rows(self.rows[1:])
+        # Reset cursor to top
+        self.selected_row = 0
+        table.move_cursor(row=self.selected_row)
         self.query_one("#results", Static).update(self._render_prompt())
             
     def _render_prompt(self):
@@ -162,20 +168,27 @@ class TokenExplorer(App):
         with open(f"prompts/prompt_{self.prompt_index}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt", "w") as f:
             f.write(self.explorer.get_prompt())
 
+    def action_select_next(self):
+        """Move selection down one row"""
+        if self.selected_row < len(self.rows) - 2:  # -2 for header row
+            self.selected_row += 1
+            table = self.query_one(DataTable)
+            table.move_cursor(row=self.selected_row)
+            
+    def action_select_prev(self):
+        """Move selection up one row"""
+        if self.selected_row > 0:
+            self.selected_row -= 1
+            table = self.query_one(DataTable)
+            table.move_cursor(row=self.selected_row)
+
     def action_append_token(self):
+        """Append currently selected token"""
         table = self.query_one(DataTable)
-        row_index = table.cursor_row
-        
-        if row_index is not None:
-            self.explorer.append_token(self.rows[row_index+1][0])
+        if table.cursor_row is not None:
+            self.explorer.append_token(self.rows[table.cursor_row+1][0])
             self.prompts[self.prompt_index] = self.explorer.get_prompt()
-            self.query_one("#results", Static).update(self._render_prompt())
-            self.rows = self._top_tokens_to_rows(
-                self.explorer.get_top_n_tokens(n=TOKENS_TO_SHOW)
-                )
-            table.clear()
-            table.add_rows(self.rows[1:])
-        self.query_one("#results", Static).update(self._render_prompt())
+            self._refresh_table()  # This will reset cursor position
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Token Explorer Application')
@@ -195,4 +208,3 @@ if __name__ == "__main__":
             sys.exit(1)
     app = TokenExplorer(prompt)
     app.run()
-

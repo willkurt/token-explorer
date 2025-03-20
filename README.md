@@ -30,6 +30,12 @@ In the model has a default prompt, but you can provide any text file as an argum
 uv run main.py --input <path_to_file>
 ```
 
+You can also use the `--bf16` flag to load the model in bfloat16 precision, which reduces memory usage:
+
+```bash
+uv run main.py --bf16
+```
+
 ## Usage
 
 When you start the app you will see your prompt as well as a table of the top 30 tokens and their probabilities.

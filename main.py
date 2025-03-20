@@ -48,12 +48,12 @@ class TokenExplorer(App):
                 ("j", "select_next", "Down"),
                 ("k", "select_prev", "Up")]
     
-    def __init__(self, prompt=EXAMPLE_PROMPT):
+    def __init__(self, prompt=EXAMPLE_PROMPT, use_bf16=False):
         super().__init__()
         # Add support for multiple prompts.
         self.prompts = [prompt]
         self.prompt_index = 0
-        self.explorer = Explorer(MODEL_NAME)
+        self.explorer = Explorer(MODEL_NAME, use_bf16=use_bf16)
         self.explorer.set_prompt(prompt)
         self.rows = self._top_tokens_to_rows(
             self.explorer.get_top_n_tokens(n=TOKENS_TO_SHOW)
@@ -193,6 +193,7 @@ class TokenExplorer(App):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Token Explorer Application')
     parser.add_argument('--input', '-i', type=str, help='Path to input text file')
+    parser.add_argument('--bf16', action='store_true', help='Load model in bf16 precision')
     args = parser.parse_args()
 
     prompt = EXAMPLE_PROMPT
@@ -206,5 +207,5 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Error reading file: {e}")
             sys.exit(1)
-    app = TokenExplorer(prompt)
+    app = TokenExplorer(prompt=prompt, use_bf16=args.bf16)
     app.run()

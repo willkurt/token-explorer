@@ -8,16 +8,21 @@ import torch
 import numpy as np
 
 class Explorer:
-    def __init__(self, model_name="Qwen/Qwen2.5-0.5B"):
+    def __init__(self, model_name="Qwen/Qwen2.5-0.5B", use_bf16=False):
         """
         Initialize the Explorer with a model name.
         
         Args:
             model_name: Name of the model to load (default "Qwen/Qwen2.5-0.5B")
+            use_bf16: Whether to load model in bf16 precision (default False)
         """
         self.model_name = model_name
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModelForCausalLM.from_pretrained(model_name)
+        # Load model with bf16 if specified
+        if use_bf16:
+            self.model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
+        else:
+            self.model = AutoModelForCausalLM.from_pretrained(model_name)
         
         # Auto select device (CUDA > MPS > CPU)
         if torch.cuda.is_available():
@@ -138,8 +143,9 @@ class Explorer:
     def get_prompt_tokens_strings(self):
         """
         Get the current prompt tokens as a string.
+        Returns a list of strings with special tokens (newline, tab, etc.) made visible.
         """
-        return [self.tokenizer.decode(token) for token in self.prompt_tokens]
+        return [self._format_special_token(self.tokenizer.decode(token)) for token in self.prompt_tokens]
     
     def pop_token(self):
         """
@@ -173,6 +179,28 @@ class Explorer:
         
         return self
     
+    def _format_special_token(self, token):
+        """
+        Format special/invisible tokens into readable strings.
+        
+        Args:
+            token: The token string to format
+        Returns:
+            Formatted string with special tokens made visible
+        """
+        # Common special tokens mapping
+        special_tokens = {
+            '\n': '\\n',  # newline
+            '\t': '\\t',  # tab
+            '\r': '\\r',  # carriage return
+            ' ': '\\s',   # space
+        }
+        
+        # If token is in special_tokens, return its visible representation
+        if token in special_tokens:
+            return special_tokens[token]
+        return token
+
     def get_top_n_tokens(self, n=5, search=""):
         """
         Get the top n most likely next tokens given the current prompt.
@@ -199,7 +227,7 @@ class Explorer:
             # Filter tokens that contain the search string
             matching_tokens = []
             for idx, prob in enumerate(next_token_probs):
-                token = self.tokenizer.decode(idx)
+                token = self._format_special_token(self.tokenizer.decode(idx))
                 if search.lower() in token.lower():
                     matching_tokens.append({
                         "token_id": idx,
@@ -216,7 +244,7 @@ class Explorer:
             
             results = []
             for prob, idx in zip(top_probs, top_indices):
-                token = self.tokenizer.decode(idx)
+                token = self._format_special_token(self.tokenizer.decode(idx))
                 results.append({
                     "token": token,
                     "token_id": idx.item(),

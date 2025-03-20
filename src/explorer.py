@@ -6,6 +6,8 @@ The Explorer class manages the prompt internally and handles all interactions wi
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 import numpy as np
+from outlines_core import Guide, Index, Vocabulary
+import re
 
 class Explorer:
     def __init__(self, model_name="Qwen/Qwen2.5-0.5B"):
@@ -27,11 +29,24 @@ class Explorer:
         else:
             self.device = torch.device("cpu")
         self.model = self.model.to(self.device)
+
+        self.vocab = Vocabulary.from_pretrained(model_name)
+        self.guide = None
         
-        # Initialize with empty prompt
+        # Initialize with empty promp
         self.prompt_text = ""
         self.prompt_tokens = []
     
+
+    def clear_guide(self):
+        self.guide = None
+
+    def set_guide(self, regex_struct):
+        index = Index(regex_struct, self.vocab)
+        self.guide = Guide(index)
+
+
+
     def set_prompt(self, prompt_text):
         """
         Set the current prompt text and update the encoded tokens.
@@ -143,6 +158,7 @@ class Explorer:
     
     def pop_token(self):
         """
+        NOTE: Need to handle the guide in this case.
         Remove and return the last token from the prompt tokens.
         If the prompt is empty, return None.
         
@@ -170,10 +186,18 @@ class Explorer:
         
         # Update prompt text to match new tokens
         self.prompt_text = self.tokenizer.decode(self.prompt_tokens)
+        if self.guide is not None:
+            self.guide.advance(token_id)
         
         return self
+    def guide_is_finished(self):
+        if self.guide is not None:
+            return self.guide.get_tokens() == [self.vocab.get_eos_token_id()]
+        return False
     
     def get_top_n_tokens(self, n=5, search=""):
+        if self.guide_is_finished():
+            return []
         """
         Get the top n most likely next tokens given the current prompt.
         Optionally filter tokens by a search string.
@@ -194,7 +218,14 @@ class Explorer:
         
         # Get probabilities using softmax
         next_token_probs = torch.nn.functional.softmax(next_token_logits, dim=0)
-        
+
+        if self.guide is not None:
+            allowed_tokens = self.guide.get_tokens()
+            allowed_tokens_mask = torch.zeros(len(next_token_probs), device=next_token_logits.device)
+            allowed_tokens_mask[allowed_tokens] = 1.0
+            next_token_probs =  next_token_probs * allowed_tokens_mask
+            # renormalize the probabilities
+            next_token_probs = next_token_probs / next_token_probs.sum()
         if search:
             # Filter tokens that contain the search string
             matching_tokens = []
@@ -209,6 +240,9 @@ class Explorer:
             
             # Sort by probability and take top n
             matching_tokens.sort(key=lambda x: x["probability"], reverse=True)
+            if self.guide is not None:
+                # make sure that the token id is in the allowed tokens
+                matching_tokens = [token for token in matching_tokens if token["token_id"] in allowed_tokens]
             return matching_tokens[:n]
         else:
             # Original behavior for no search string
@@ -222,7 +256,9 @@ class Explorer:
                     "token_id": idx.item(),
                     "probability": prob.item()
                 })
-                
+            if self.guide is not None:
+                # make sure that the token id is in the allowed tokens
+                results = [token for token in results if token["token_id"] in allowed_tokens]
             return results
 
 
@@ -250,3 +286,9 @@ if __name__ == "__main__":
     print("Token probabilities:", explorer.get_prompt_token_probabilities())
     print("-----")
     print("Token entropies:", explorer.get_prompt_token_normalized_entropies())
+    explorer.set_guide(r'a{1,5}')
+    print("-----")
+    print("Top tokens:", explorer.get_top_n_tokens())
+    print("-----")
+    print("Guide is finished:", explorer.guide.is_finished())
+

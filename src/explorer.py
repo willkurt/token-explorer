@@ -41,10 +41,12 @@ class Explorer:
     def clear_guide(self):
         self.guide = None
 
-    def set_guide(self, regex_struct):
+    def set_guide(self, regex_struct,ff_from=None):
         index = Index(regex_struct, self.vocab)
         self.guide = Guide(index)
-
+        if ff_from is not None:
+            for token in self.prompt_tokens[ff_from:]:
+                self.guide.advance(token)
 
 
     def set_prompt(self, prompt_text):

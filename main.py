@@ -179,7 +179,11 @@ class TokenExplorer(App):
 
     def action_toggle_struct(self):
         if self.struct_index is None:
-            self.struct_index = len(self.explorer.get_prompt()) - 1
+            # this is the theoretical index of the first
+            # structure token when structured gen is activated
+            # even though that token *doesn't* exist yet.
+            # this track to help with backtracking.
+            self.struct_index = len(self.explorer.get_prompt_tokens())
             self.explorer.set_guide(self.regex_structs[self.current_struct_index][1])
         else:
             self.struct_index = None
@@ -219,13 +223,6 @@ class TokenExplorer(App):
         self.display_mode = next(self.display_modes)
         self.query_one("#results", Static).update(self._render_prompt())
 
-    def action_pop_token(self):
-        if len(self.explorer.get_prompt_tokens()) > 1:
-            self.explorer.pop_token()
-            self.prompts[self.prompt_index] = self.explorer.get_prompt()
-            self.query_one("#results", Static).update(self._render_prompt())
-            self._refresh_table()
-            
     def action_save_prompt(self):
         with open(f"prompts/prompt_{self.prompt_index}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt", "w") as f:
             f.write(self.explorer.get_prompt())
@@ -253,6 +250,19 @@ class TokenExplorer(App):
             self.explorer.append_token(self.rows[table.cursor_row+1][0])
             self.prompts[self.prompt_index] = self.explorer.get_prompt()
             self._refresh_table()  # This will reset cursor position
+
+    def action_pop_token(self):
+        if len(self.explorer.get_prompt_tokens()) > 1:
+            self.explorer.pop_token()
+            if self.explorer.guide is not None:
+                self.explorer.clear_guide()
+                #  need to add logic for backtracking the guide
+                self.explorer.set_guide(self.regex_structs[self.current_struct_index][1]
+                                        ,ff_from=self.struct_index)
+            self.prompts[self.prompt_index] = self.explorer.get_prompt()
+            self.query_one("#results", Static).update(self._render_prompt())
+            self._refresh_table()
+            
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Token Explorer Application')

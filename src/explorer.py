@@ -218,15 +218,30 @@ class Explorer:
         Returns:
             List of dicts containing token info and probabilities, sorted by probability
         """
-        # Get model output for the encoded prompt
-        with torch.no_grad():
-            outputs = self.model(torch.tensor([self.prompt_tokens]).to(self.device))
-            
-        # Get logits for the next token
-        next_token_logits = outputs.logits[0, -1, :]
+        # Convert token IDs to tensor and create input
+        input_ids = torch.tensor([self.prompt_tokens]).to(self.device)
         
-        # Get probabilities using softmax
+        # Get model output with hidden states
+        with torch.no_grad():
+            outputs = self.model(input_ids, output_hidden_states=True)
+            
+        # Get logits and hidden states
+        next_token_logits = outputs.logits[0, -1, :]
+        hidden_states = outputs.hidden_states  # Tuple of tensors (num_layers + 1, batch, seq_len, hidden_size)
+        
+        # Get probabilities for final layer using softmax
         next_token_probs = torch.nn.functional.softmax(next_token_logits, dim=0).to(torch.float32)
+        
+        # Calculate per-layer probabilities
+        # Skip first element as it's the embeddings, not a layer output
+        layer_probs = []
+        for layer_output in hidden_states[1:]:
+            # Get last token's hidden state
+            last_hidden = layer_output[0, -1, :]
+            # Project to vocab size using model's lm_head
+            layer_logits = self.model.lm_head(last_hidden.unsqueeze(0)).squeeze(0)
+            # Get probabilities
+            layer_probs.append(torch.nn.functional.softmax(layer_logits, dim=0).to(torch.float32))
         
         if search:
             # Filter tokens that contain the search string
@@ -237,7 +252,8 @@ class Explorer:
                     matching_tokens.append({
                         "token_id": idx,
                         "token": token,
-                        "probability": prob.item()
+                        "probability": prob.item(),
+                    "layer_probs": [layer_prob[idx].item() for layer_prob in layer_probs]
                     })
             
             # Sort by probability and take top n
@@ -253,7 +269,8 @@ class Explorer:
                 results.append({
                     "token": token,
                     "token_id": idx.item(),
-                    "probability": prob.item()
+                    "probability": prob.item(),
+                    "layer_probs": [layer_prob[idx].item() for layer_prob in layer_probs]
                 })
                 
             return results

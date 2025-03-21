@@ -79,9 +79,12 @@ class Explorer:
             position_logits = logits[pos]
             position_probs = torch.softmax(position_logits, dim=-1)
             
+            # Convert to float32 for probability calculation
+            position_probs_float = position_probs.to(torch.float32)
+            
             # Get probability of the actual next token
             next_token_id = self.prompt_tokens[pos + 1]
-            next_token_prob = position_probs[next_token_id].item()
+            next_token_prob = position_probs_float[next_token_id].item()
             
             token_probabilities.append(next_token_prob)
         return token_probabilities
@@ -108,8 +111,10 @@ class Explorer:
             position_probs = torch.softmax(position_logits, dim=-1)
             
             # Calculate entropy: -sum(p * log(p))
+            # Convert to float32 for entropy calculation
+            position_probs_float = position_probs.to(torch.float32)
             # We filter out zeros to avoid log(0) issues
-            probs_np = position_probs.cpu().numpy()
+            probs_np = position_probs_float.cpu().numpy()
             non_zero_probs = probs_np[probs_np > 0]
             entropy = -np.sum(non_zero_probs * np.log2(non_zero_probs))
             
@@ -221,7 +226,7 @@ class Explorer:
         next_token_logits = outputs.logits[0, -1, :]
         
         # Get probabilities using softmax
-        next_token_probs = torch.nn.functional.softmax(next_token_logits, dim=0)
+        next_token_probs = torch.nn.functional.softmax(next_token_logits, dim=0).to(torch.float32)
         
         if search:
             # Filter tokens that contain the search string

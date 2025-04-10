@@ -6,9 +6,7 @@ The Explorer class manages the prompt internally and handles all interactions wi
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 import numpy as np
-from outlines_core import Guide, Index, Vocabulary
-import re
-
+from src.simpleguide import SimpleGuide
 class Explorer:
     def __init__(self, model_name="Qwen/Qwen2.5-0.5B"):
         """
@@ -29,8 +27,6 @@ class Explorer:
         else:
             self.device = torch.device("cpu")
         self.model = self.model.to(self.device)
-
-        self.vocab = Vocabulary.from_pretrained(model_name)
         self.guide = None
         
         # Initialize with empty promp
@@ -42,8 +38,8 @@ class Explorer:
         self.guide = None
 
     def set_guide(self, regex_struct,ff_from=None):
-        index = Index(regex_struct, self.vocab)
-        self.guide = Guide(index)
+        self.clear_guide()
+        self.guide = SimpleGuide(regex_struct, self.tokenizer)
         if ff_from is not None:
             for token in self.prompt_tokens[ff_from:]:
                 self.guide.advance(token)
@@ -192,14 +188,15 @@ class Explorer:
             self.guide.advance(token_id)
         
         return self
+    
     def guide_is_finished(self):
         if self.guide is not None:
-            return self.guide.get_tokens() == [self.vocab.get_eos_token_id()]
+            return self.guide.is_finished()
         return False
     
     def get_top_n_tokens(self, n=5, search=""):
-        if self.guide_is_finished():
-            return []
+        #if self.guide_is_finished():
+        #    return []
         """
         Get the top n most likely next tokens given the current prompt.
         Optionally filter tokens by a search string.
@@ -263,9 +260,22 @@ class Explorer:
                 results = [token for token in results if token["token_id"] in allowed_tokens]
             return results
 
+"""
+Attempting to replicate the basic api of outlines-core, but
+we're going to try to reduce the memory footprint and make it more efficient.
+
+"""
 
 # Example usage
 if __name__ == "__main__":
+    tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B")  
+    # test the RegexGuide
+    guide = RegexGuide(r'a{1,5}', tokenizer)
+    print("Tokens:", guide.get_tokens())
+    guide.advance('a')
+    print("Tokens:", guide.get_tokens())
+    guide.advance('a')
+    print("Tokens:", guide.get_tokens())
     explorer = Explorer()
     explorer.set_prompt("Once upon a time, there was a")
     

@@ -2,6 +2,9 @@ from transformers import AutoTokenizer
 import re
 import time
 from greenery import parse
+import pickle
+import hashlib
+import os
 
 class SimpleGuide:
     """
@@ -24,6 +27,24 @@ class SimpleGuide:
         self.build_state_token_map()
         
     def build_state_token_map(self):
+        # Create a unique hash for this regex and tokenizer combination
+        cache_key = hashlib.md5(
+            f"{self.regex_struct}_{self.tokenizer.name_or_path}".encode()
+        ).hexdigest()
+        
+        cache_dir = os.path.join(os.path.dirname(__file__), ".cache")
+        cache_file = os.path.join(cache_dir, f"state_token_map_{cache_key}.pkl")
+        
+        # Try to load from cache first
+        if os.path.exists(cache_file):
+            try:
+                with open(cache_file, 'rb') as f:
+                    self.state_token_map = pickle.load(f)
+                return
+            except Exception as e:
+                print(f"Cache load failed: {e}")
+        
+        # If cache doesn't exist or fails, build the map
         self.state_token_map = {}
         for state in self.fsm.states:
             self.state_token_map[state] = [
@@ -31,8 +52,14 @@ class SimpleGuide:
                 for token_str in self.vocab_list 
                 if self.get_current_state(token_str, state) is not None
                 ]
-
-                
+        
+        # Save to cache
+        os.makedirs(cache_dir, exist_ok=True)
+        try:
+            with open(cache_file, 'wb') as f:
+                pickle.dump(self.state_token_map, f)
+        except Exception as e:
+            print(f"Cache save failed: {e}")
 
     def get_current_state(self, candidate, state=None):
         if state is None:
@@ -56,15 +83,6 @@ class SimpleGuide:
         # Here's where we can distinguish between in a finished state and when dead.
         if self.finished:
             return [self.tokenizer.eos_token_id]
-        # matching_tokens = []
-        # print(len(self.vocab_list))
-        # for i, token_str in enumerate(self.vocab_list):
-        #     temp_string = self.string_so_far + token_str
-        #     if self.is_potential_prefix(temp_string):
-        #         matching_tokens.append(self.vocab[token_str])
-        # if self.regex_struct.match(self.string_so_far) is not None:
-        #     pass
-        # there's a special case where we add the eos token to the end of the string
         matching_tokens = self.state_token_map[self.get_current_state(self.string_so_far)]
         return matching_tokens 
 
@@ -86,6 +104,7 @@ class SimpleGuide:
         current_state = self.get_current_state(self.string_so_far)
         live_states = [val for val in self.fsm.map[current_state].values() if self.fsm.islive(val)]
         return len(live_states) == 0
+        return not self.fsm.islive(current_state)
 
 def test_guide_loading():
     tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B")
@@ -93,7 +112,6 @@ def test_guide_loading():
     start_time = time.time()
     guide = SimpleGuide(r'(0?[1-9]|[12]\d|3[01])/(0?[1-9]|1[0-2])/\d{4}', tokenizer)
     end_time = time.time()
-    print(guide.state_token_map)
     loading_time = (end_time - start_time) * 1000  # Convert to milliseconds
     print(f"Guide loading time: {loading_time:.2f}ms")
 

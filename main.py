@@ -112,7 +112,6 @@ class TokenExplorer(App):
         self.rows = self._top_tokens_to_rows(
             self.explorer.get_top_n_tokens(n=TOKENS_TO_SHOW)
             )
-        print("Rows:", self.rows)
         table.clear()
         table.add_rows(self.rows[1:])
         # Reset cursor to top
@@ -243,13 +242,15 @@ class TokenExplorer(App):
 
     def action_append_token(self):
         """Append currently selected token"""
+        # TODO: here we need to distinguish between a dead and finished guide
         if self.explorer.guide_is_finished():
             return None
         table = self.query_one(DataTable)
         if table.cursor_row is not None:
-            self.explorer.append_token(self.rows[table.cursor_row+1][0])
-            self.prompts[self.prompt_index] = self.explorer.get_prompt()
-            self._refresh_table()  # This will reset cursor position
+            if len(self.rows) > (table.cursor_row+1):
+                self.explorer.append_token(self.rows[table.cursor_row+1][0])
+                self.prompts[self.prompt_index] = self.explorer.get_prompt()
+                self._refresh_table()  # This will reset cursor position
 
     def action_pop_token(self):
         if len(self.explorer.get_prompt_tokens()) > 1:

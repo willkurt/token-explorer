@@ -61,3 +61,11 @@ def test_is_dead_multiple_finish():
     assert not guide.is_dead() and guide.is_finished()
     guide.advance(tokenizer.encode("c")[0])
     assert guide.is_dead()
+
+def test_spaces():
+    tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B")
+    guide = SimpleGuide(" ab", tokenizer, no_cache=True)
+    assert any([cc.accepts(' ') for cc in guide.fsm.map[0].keys()])
+    assert tokenizer.encode(" ")[0] in guide.state_token_map[0]
+
+    

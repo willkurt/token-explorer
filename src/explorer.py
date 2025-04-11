@@ -186,6 +186,7 @@ class Explorer:
         self.prompt_text = self.tokenizer.decode(self.prompt_tokens)
         if self.guide is not None:
             self.guide.advance(token_id)
+
         
         return self
     
@@ -194,9 +195,12 @@ class Explorer:
             return self.guide.is_finished()
         return False
     
+    def guide_is_dead(self):
+        if self.guide is not None:
+            return self.guide.is_dead()
+        return False
+    
     def get_top_n_tokens(self, n=5, search=""):
-        #if self.guide_is_finished():
-        #    return []
         """
         Get the top n most likely next tokens given the current prompt.
         Optionally filter tokens by a search string.

@@ -12,9 +12,8 @@ import os
 import argparse
 import tomli 
 from datetime import datetime
-import re
 
-# Replace the constants with config
+
 def load_config():
     try:
         with open("config.toml", "rb") as f:
@@ -56,7 +55,7 @@ class TokenExplorer(App):
                 ]
     
     
-    def __init__(self, prompt=EXAMPLE_PROMPT):
+    def __init__(self, prompt=EXAMPLE_PROMPT, precompile=False):
         super().__init__()
         # Add support for multiple prompts.
         self.prompts = [prompt]
@@ -72,7 +71,17 @@ class TokenExplorer(App):
         self.struct_index = None
         # this is the position of the struct in the regex_structs list
         self.current_struct_index = 0
-    
+        if precompile:
+            self.precompile_regex_structs()
+
+    def precompile_regex_structs(self):
+        print("Precompiling regex structs, this may take a while...")
+        for name, regex in self.regex_structs:
+            print(name)
+            self.explorer.set_guide(regex)
+            self.explorer.clear_guide()
+        self.explorer.clear_guide()
+
     def _get_regex_structs(self):
         try:
             struct_files = []
@@ -243,12 +252,14 @@ class TokenExplorer(App):
     def action_append_token(self):
         """Append currently selected token"""
         # TODO: here we need to distinguish between a dead and finished guide
-        if self.explorer.guide_is_finished():
-            return None
+
         table = self.query_one(DataTable)
         if table.cursor_row is not None:
             if len(self.rows) > (table.cursor_row+1):
                 self.explorer.append_token(self.rows[table.cursor_row+1][0])
+                if self.explorer.guide_is_dead():
+                    self.explorer.clear_guide()
+                    self.struct_index = None
                 self.prompts[self.prompt_index] = self.explorer.get_prompt()
                 self._refresh_table()  # This will reset cursor position
 
@@ -263,24 +274,26 @@ class TokenExplorer(App):
             self.prompts[self.prompt_index] = self.explorer.get_prompt()
             self.query_one("#results", Static).update(self._render_prompt())
             self._refresh_table()
-            
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Token Explorer Application')
     parser.add_argument('--input', '-i', type=str, help='Path to input text file')
+    parser.add_argument('--precompile', '-p', action='store_true', help='Precompile regex structs')
     args = parser.parse_args()
 
     prompt = EXAMPLE_PROMPT
     if args.input:
         try:
             with open(args.input, 'r') as f:
-                prompt = f.read().strip()
+                prompt = f.read()
         except FileNotFoundError:
             print(f"Error: Could not find input file '{args.input}'")
             sys.exit(1)
         except Exception as e:
             print(f"Error reading file: {e}")
             sys.exit(1)
-    app = TokenExplorer(prompt)
+    app = TokenExplorer(prompt, args.precompile)
 
     app.run()

@@ -12,21 +12,23 @@ class SimpleGuide:
     Since we're iterating manually through token selection, it doesn't really matter if we're adding 
     a few 100ms to the inference time. I'm pretty sure this could be may much more efficient eventually.
     """
-    def __init__(self, regex_struct, tokenizer):
+    def __init__(self, regex_struct, tokenizer, no_cache=False):
         self.regex_struct = re.compile(regex_struct)
         self.pattern = parse(regex_struct)
         self.fsm = self.pattern.to_fsm()
-        print(f"regex_struct: {self.regex_struct}")
         self.tokenizer = tokenizer
         # get the string representation of the tokenizer vocabulary
         self.vocab = tokenizer.get_vocab()
-        self.vocab_list = list(self.vocab.keys())
+        self.vocab_list = [{
+            'id': value,
+            'str': tokenizer.decode(value)
+            } for value in self.vocab.values()]
         self.string_so_far = ""
         self.tokens_so_far = []
         self.finished = False
-        self.build_state_token_map()
+        self.build_state_token_map(no_cache)
         
-    def build_state_token_map(self):
+    def build_state_token_map(self, no_cache=False):
         # Create a unique hash for this regex and tokenizer combination
         cache_key = hashlib.md5(
             f"{self.regex_struct}_{self.tokenizer.name_or_path}".encode()
@@ -36,7 +38,7 @@ class SimpleGuide:
         cache_file = os.path.join(cache_dir, f"state_token_map_{cache_key}.pkl")
         
         # Try to load from cache first
-        if os.path.exists(cache_file):
+        if os.path.exists(cache_file) and not no_cache:
             try:
                 with open(cache_file, 'rb') as f:
                     self.state_token_map = pickle.load(f)
@@ -48,18 +50,19 @@ class SimpleGuide:
         self.state_token_map = {}
         for state in self.fsm.states:
             self.state_token_map[state] = [
-                self.vocab[token_str] 
-                for token_str in self.vocab_list 
-                if self.get_current_state(token_str, state) is not None
+                item['id']
+                for item in self.vocab_list 
+                if self.get_current_state(item['str'], state) is not None
                 ]
         
         # Save to cache
         os.makedirs(cache_dir, exist_ok=True)
-        try:
-            with open(cache_file, 'wb') as f:
-                pickle.dump(self.state_token_map, f)
-        except Exception as e:
-            print(f"Cache save failed: {e}")
+        if not no_cache:
+            try:
+                with open(cache_file, 'wb') as f:
+                    pickle.dump(self.state_token_map, f)
+            except Exception as e:
+                print(f"Cache save failed: {e}")
 
     def get_current_state(self, candidate, state=None):
         if state is None:
@@ -110,7 +113,8 @@ def test_guide_loading():
     tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B")
     print("Vocab size:", len(tokenizer.get_vocab()))
     start_time = time.time()
-    guide = SimpleGuide(r'(0?[1-9]|[12]\d|3[01])/(0?[1-9]|1[0-2])/\d{4}', tokenizer)
+    #guide = SimpleGuide(r'(0?[1-9]|[12]\d|3[01])/(0?[1-9]|1[0-2])/\d{4}', tokenizer)
+    guide = SimpleGuide(r'\w{5} \w{5} \w{5}\n', tokenizer)
     end_time = time.time()
     loading_time = (end_time - start_time) * 1000  # Convert to milliseconds
     print(f"Guide loading time: {loading_time:.2f}ms")
@@ -124,7 +128,7 @@ def test_guide_loading():
     tokens = guide.get_tokens()
     end_time = time.time()
     print(tokens)
-    print([tokenizer.decode(token) for token in tokens])
+    #print([tokenizer.decode(token) for token in tokens])
     print(f"Tokens time: {(end_time - start_time) * 1000:.2f}ms")
 
 if __name__ == "__main__":

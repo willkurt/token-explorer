@@ -5,7 +5,9 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "greenery>=4.2.2",
     "httpx>=0.28.1",
+    "pytest>=8.3.5",
     "textual>=2.1.2",
     "textual-dev>=1.7.0",
     "tomli>=2.2.1",

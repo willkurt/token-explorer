@@ -30,6 +30,12 @@ In the model has a default prompt, but you can provide any text file as an argum
 uv run main.py --input <path_to_file>
 ```
 
+If you're using regex structs, you can precompile them with:
+
+```bash
+uv run main.py --precompile
+```
+
 ## Usage
 
 When you start the app you will see your prompt as well as a table of the top 30 tokens and their probabilities.
@@ -126,6 +132,46 @@ Here's the probability view for the new prompt:
 ![Exploring](./imgs/workflow3.png)
 
 You can see both that we *did* still get the correct answer, and that the path I chose was fairly low probability for a bit. So we've learned something interesting! Even if we perturb the prompt to a low-probability path in the middle of it's reasoning, we still get the correct answer!
+
+## Experimental Support For Structured Outputs
+
+Token Explorer now supports structured outputs!
+
+Currently Token Explorer comes with 5 precompiled regex structs:
+- eu_date
+- iso_date
+- us_date
+- month_name
+- name
+
+You'll see your current struct at the bottom of the prompt like so:
+
+![Struct](./imgs/current_struct.png)
+
+By pressing `Shift+r` you can cycle through the structs.
+
+![Toggle struct](./imgs/toggle_struct.png)
+
+When you press `r` the structure will be activated. This will change it's color to green and you will only see tokens that adhere to that structure.
+
+![Struct active](./imgs/struct_active.png)
+
+The structure will eventually reach a final state where the structure is satisfied (though there may be multiple ways to satisfy the structure). In this case the named structure will be highlighted in red.
+
+![Struct final](./imgs/struct_final.png)
+
+Finally if you complete the defined structure, the structure will automatically be toggled off, allowing you to choose from among the unstructured tokens.
+
+![Struct complete](./imgs/struct_complete.png)
+
+### Adding structure
+
+You can add your own structure by putting a .txt file in the `struct` folder. The file should contain a Python regex pattern.
+
+**Warning:** This is an experimental feature and the regex pattern can currently take a loooong time to compile (if they're sophisticated). Once compiled they take up very little memory, and are fast to run. To precompile your structs, you can use the `--precompile` flag.
+
+The precompile structs are stored in `src/.cache/` as `.pkl` files. 5 of them are precompiled in the repo for easy demoing.
+
 
 ## Configuration
 

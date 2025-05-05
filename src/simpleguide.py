@@ -33,7 +33,7 @@ class TokenTrie:
         while node_state_stack:
             node, s = node_state_stack.pop()
             for c, next_node in node.children.items():
-                for cc, next_state in fsm.map[state].items():
+                for cc, next_state in fsm.map[s].items():
                     if cc.accepts(c) and fsm.islive(next_state):
                         if next_node.token_id:
                             valid_tokens.append(next_node.token_id)
@@ -42,9 +42,7 @@ class TokenTrie:
 
 class SimpleGuide:
     """
-    The aim of this is to provide a low-memory guide without much regard to cost at inference time.
-    Since we're iterating manually through token selection, it doesn't really matter if we're adding 
-    a few 100ms to the inference time. I'm pretty sure this could be may much more efficient eventually.
+    A minimal guide for structured generation, based on the greenery library for regex parsing.
     """
     def __init__(self, regex_struct, tokenizer, no_cache=False, verbose=False):
         self.regex_struct = re.compile(regex_struct)
@@ -162,8 +160,8 @@ def test_guide_loading():
     print("Vocab size:", len(tokenizer.get_vocab()))
     start_time = time.time()
     #guide = SimpleGuide(r'(0?[1-9]|[12]\d|3[01])/(0?[1-9]|1[0-2])/\d{4}', tokenizer)
-    regex = r'\w{5} \w{5} \w{5}\n'
-    #regex = r'Reasoning: [\w\s\d]{30,80}\n\nAnswer: 0?[1-9]\d{0,4}'
+    #regex = r'\w{5} \w{5} \w{5}\n'
+    regex = r'\s?(January|February|March|April|May|June|July|August|September|October|November|December)\s+(0?[1-9]|[12]\d|3[01]),\s+\d{4}'
     guide = SimpleGuide(regex, tokenizer, no_cache=True, verbose=True)
     end_time = time.time()
     loading_time = (end_time - start_time) * 1000  # Convert to milliseconds
@@ -195,6 +193,3 @@ def test_guide_loading():
 
 if __name__ == "__main__":
     test_guide_loading()
-    #tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B")
-    #guide = SimpleGuide("abc", tokenizer)
-    #print(guide.get_current_state("abce"))

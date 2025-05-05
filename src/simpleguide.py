@@ -6,16 +6,56 @@ import pickle
 import hashlib
 import os
 
+
+
+class TrieNode:
+    def __init__(self):
+        self.children = {}
+        self.token_id = None
+        
+class TokenTrie:
+    def __init__(self):
+        self.root = TrieNode()
+        
+    def insert(self, token_meta):
+        node = self.root
+        word = token_meta['str']
+        token_id = token_meta['id']
+        for char in word:
+            if char not in node.children:
+                node.children[char] = TrieNode()
+            node = node.children[char]
+        node.token_id = token_id
+
+    def collect_valid_tokens(self, state, fsm):
+        node_state_stack = [(self.root, state)]
+        valid_tokens = []
+        while node_state_stack:
+            node, s = node_state_stack.pop()
+            for c, next_node in node.children.items():
+                for cc, next_state in fsm.map[s].items():
+                    if cc.accepts(c) and fsm.islive(next_state):
+                        if next_node.token_id:
+                            valid_tokens.append(next_node.token_id)
+                        node_state_stack.append((next_node, next_state))
+        return valid_tokens
+
 class SimpleGuide:
     """
-    The aim of this is to provide a low-memory guide without much regard to cost at inference time.
-    Since we're iterating manually through token selection, it doesn't really matter if we're adding 
-    a few 100ms to the inference time. I'm pretty sure this could be may much more efficient eventually.
+    A minimal guide for structured generation, based on the greenery library for regex parsing.
     """
-    def __init__(self, regex_struct, tokenizer, no_cache=False):
+    def __init__(self, regex_struct, tokenizer, no_cache=False, verbose=False):
         self.regex_struct = re.compile(regex_struct)
+        start_time = time.time()
         self.pattern = parse(regex_struct)
+        end_time = time.time()
+        if verbose:
+            print(f"Regex parsing time: {(end_time - start_time) * 1000:.2f}ms")
+        start_time = time.time()
         self.fsm = self.pattern.to_fsm()
+        end_time = time.time()
+        if verbose:
+            print(f"FSM construction time: {(end_time - start_time) * 1000:.2f}ms")
         self.tokenizer = tokenizer
         # get the string representation of the tokenizer vocabulary
         self.vocab = tokenizer.get_vocab()
@@ -26,9 +66,15 @@ class SimpleGuide:
         self.string_so_far = ""
         self.tokens_so_far = []
         self.finished = False
-        self.build_state_token_map(no_cache)
-        
-    def build_state_token_map(self, no_cache=False):
+        self.build_token_str_trie()
+        self.build_state_token_map(no_cache, verbose)
+    
+    def build_token_str_trie(self):
+        self.token_str_trie = TokenTrie()
+        for item in self.vocab_list:
+            self.token_str_trie.insert(item)
+
+    def build_state_token_map(self, no_cache=False, verbose=False):
         # Create a unique hash for this regex and tokenizer combination
         cache_key = hashlib.md5(
             f"{self.regex_struct}_{self.tokenizer.name_or_path}".encode()
@@ -47,14 +93,13 @@ class SimpleGuide:
                 print(f"Cache load failed: {e}")
         
         # If cache doesn't exist or fails, build the map
+        start_time = time.time()
         self.state_token_map = {}
         for state in self.fsm.states:
-            self.state_token_map[state] = [
-                item['id']
-                for item in self.vocab_list 
-                if self.get_current_state(item['str'], state) is not None
-                ]
-        
+            self.state_token_map[state] = self.token_str_trie.collect_valid_tokens(state, self.fsm)
+        end_time = time.time()
+        if verbose:
+            print(f"State token map construction time: {(end_time - start_time) * 1000:.2f}ms")
         # Save to cache
         os.makedirs(cache_dir, exist_ok=True)
         if not no_cache:
@@ -110,11 +155,14 @@ class SimpleGuide:
         return not self.fsm.islive(current_state)
 
 def test_guide_loading():
+    import sys
     tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B")
     print("Vocab size:", len(tokenizer.get_vocab()))
     start_time = time.time()
     #guide = SimpleGuide(r'(0?[1-9]|[12]\d|3[01])/(0?[1-9]|1[0-2])/\d{4}', tokenizer)
-    guide = SimpleGuide(r'\w{5} \w{5} \w{5}\n', tokenizer)
+    #regex = r'\w{5} \w{5} \w{5}\n'
+    regex = r'\s?(January|February|March|April|May|June|July|August|September|October|November|December)\s+(0?[1-9]|[12]\d|3[01]),\s+\d{4}'
+    guide = SimpleGuide(regex, tokenizer, no_cache=True, verbose=True)
     end_time = time.time()
     loading_time = (end_time - start_time) * 1000  # Convert to milliseconds
     print(f"Guide loading time: {loading_time:.2f}ms")
@@ -127,12 +175,10 @@ def test_guide_loading():
     start_time = time.time()
     tokens = guide.get_tokens()
     end_time = time.time()
-    print(tokens)
     #print([tokenizer.decode(token) for token in tokens])
     print(f"Tokens time: {(end_time - start_time) * 1000:.2f}ms")
+    # get the size of the pickled guide
+    print(f"SimpleGuide size: {sys.getsizeof(pickle.dumps(guide)) / 1024 / 1024:.2f}MB")
 
 if __name__ == "__main__":
     test_guide_loading()
-    #tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B")
-    #guide = SimpleGuide("abc", tokenizer)
-    #print(guide.get_current_state("abce"))

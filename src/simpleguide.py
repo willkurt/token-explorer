@@ -180,16 +180,5 @@ def test_guide_loading():
     # get the size of the pickled guide
     print(f"SimpleGuide size: {sys.getsizeof(pickle.dumps(guide)) / 1024 / 1024:.2f}MB")
 
-    print("Compare with Outlines-core")
-    from outlines_core import Guide, Index, Vocabulary
-    start_time = time.time()
-    vocabulary = Vocabulary.from_pretrained(tokenizer.name_or_path)
-    index = Index(regex, vocabulary)
-    guide = Guide(index)
-    end_time = time.time()
-    print(f"Outlines-core time: {(end_time - start_time) * 1000:.2f}ms")
-    # print the size of the guide in memory
-    print(f"Outlines-core size: {sys.getsizeof(pickle.dumps(guide)) / 1024 / 1024:.2f}MB")
-
 if __name__ == "__main__":
     test_guide_loading()

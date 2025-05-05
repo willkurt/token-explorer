@@ -8,7 +8,6 @@ dependencies = [
     "greenery>=4.2.2",
     "httpx>=0.28.1",
     "jupyter>=1.1.1",
-    "outlines-core>=0.2.9",
     "pytest>=8.3.5",
     "textual>=2.1.2",
     "textual-dev>=1.7.0",

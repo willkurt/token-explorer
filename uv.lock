@@ -1345,30 +1345,6 @@ wheels = [
 ]
 
 [[package]]
-name = "outlines-core"
-version = "0.2.9"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a2/e8/c194c418dbb76f508bfcacbc8ef8f247d7e8a05beabf72d16d54bec2249c/outlines_core-0.2.9.tar.gz", hash = "sha256:ca9e55dd74bb6482feb9e83028e610732d4ce8fc2a93383c3612abc5775a671b", size = 196574 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/dc/74/cd7bbcc74713e9be8d669b7c2b7ccdc41b738892379209b6c367b870dae0/outlines_core-0.2.9-cp312-cp312-macosx_14_0_arm64.whl", hash = "sha256:5637c1788fc7dd6100af6c2c96ab55d222773bb56a9217090f5dd94fa56e76d5", size = 1934733 },
-    { url = "https://files.pythonhosted.org/packages/2d/64/9a0105fc254f824ec74e26f2d4d013f6ba3fde67aac095acde29c4de00f8/outlines_core-0.2.9-cp312-cp312-macosx_14_0_x86_64.whl", hash = "sha256:2556c3d08b94a1086ded10f839d7d638818e06653b64c568092063d070e8029a", size = 2105774 },
-    { url = "https://files.pythonhosted.org/packages/c7/c1/208cd9f8a1d8edd636d82026e349722021e05687e014c92c07b0e6cc967d/outlines_core-0.2.9-cp312-cp312-macosx_15_0_arm64.whl", hash = "sha256:628b5dadd3af675ddf1884878610dd6bfdd7cfc768de8c18e776962608a49309", size = 1933454 },
-    { url = "https://files.pythonhosted.org/packages/0c/0b/0f62e1910b9294dff8f4092070589e276b41f1cd992e5676bc3f95906aef/outlines_core-0.2.9-cp312-cp312-macosx_15_0_x86_64.whl", hash = "sha256:3d7a88809e1371ab721501c96079e81b6e1009d85a9d915c91ea3836ee9b7bf9", size = 2101440 },
-    { url = "https://files.pythonhosted.org/packages/ec/c1/9a70f85d8c260b048511a6c28c3669c7aad4057741a5a8e6484b0674ee00/outlines_core-0.2.9-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:51c6870fa62d8cf40fe0b154a55f732a870ba47d080eec8e15dc1d64c9c56936", size = 2257148 },
-    { url = "https://files.pythonhosted.org/packages/eb/f7/70302d93c300381ba190c7921937657ecbda54369d57700e7cae8d9e73b0/outlines_core-0.2.9-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:094122bdfde61768d9c8fc9697e7bcd8490827d1bdd54da8efb8392503d6e46f", size = 2090220 },
-    { url = "https://files.pythonhosted.org/packages/e1/30/07c83e4378ab46218eafdbf2f9771128d0b0906b102fc495ac6ed2237f81/outlines_core-0.2.9-cp312-cp312-win32.whl", hash = "sha256:b3922e3e2ffb4261f829f4ec4bc5ed8aeb244794d12ccf3f3277262ecc0e2f8d", size = 1747151 },
-    { url = "https://files.pythonhosted.org/packages/c4/0a/b9901a1c9c47ea1084b2d33d380093227ae5d3972ba9cc5343383e5aeb67/outlines_core-0.2.9-cp312-cp312-win_amd64.whl", hash = "sha256:113421c584e893527c71973c607f8fd1c625dcb6c5445714be2f9ce9df1a36b7", size = 2037799 },
-    { url = "https://files.pythonhosted.org/packages/77/93/e56a4ce556bd46aa81cb2a4362450f344f47241ad1e1136766b5fc14a838/outlines_core-0.2.9-cp313-cp313-macosx_14_0_arm64.whl", hash = "sha256:ab997e1a676d90718a713f15a0738791771fd36d63b1aa549127e85e6d889d57", size = 1934357 },
-    { url = "https://files.pythonhosted.org/packages/30/88/39c41a628667b8970563f0333c6931637b9686aed3d1aff99b001d22db3b/outlines_core-0.2.9-cp313-cp313-macosx_14_0_x86_64.whl", hash = "sha256:bafc5f25728e4241f25ea5eb4b85a7d19b6f6834467a7d99740659f2f44a7334", size = 2105483 },
-    { url = "https://files.pythonhosted.org/packages/30/51/0944acca213434fb34d461dd9b3cdfb83ef237fe71e0099753e3a453add8/outlines_core-0.2.9-cp313-cp313-macosx_15_0_arm64.whl", hash = "sha256:5db85bf3e771067f53935ee8bfdfec486c605c4437ca6f01c03dfbcdf750e063", size = 1933065 },
-    { url = "https://files.pythonhosted.org/packages/6f/fa/9ed02ed381ae8de5813296c7357a0a7fa9510303a30bc200a66ed6420bc2/outlines_core-0.2.9-cp313-cp313-macosx_15_0_x86_64.whl", hash = "sha256:b681eeb3d7d4dc867231da1a1f1de3b65a39ded5afefe4c8ad8b639f41264198", size = 2101239 },
-    { url = "https://files.pythonhosted.org/packages/42/76/8ab6fcff862484ecf530d96cd3ca592f319c5f6d93cef61f61e43ed615c3/outlines_core-0.2.9-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5561d3766e8e0930b08eee94530dbea682b2fa59a80b6e44cfa6fc2a360df39b", size = 2256838 },
-    { url = "https://files.pythonhosted.org/packages/0d/60/59ffa9a427e3426b67344ec26085a08ab6760966ad7447319e2c7ca2cbbd/outlines_core-0.2.9-cp313-cp313-manylinux_2_28_aarch64.whl", hash = "sha256:b8d1098fb42dcb500370bd9991d1befd3966e0e246dddf18a122c6ab09945a2b", size = 2090195 },
-    { url = "https://files.pythonhosted.org/packages/4e/79/61b3ca6d60d57ffd7cd7fcc0f4df24b77713e60577ee11c045e53274d550/outlines_core-0.2.9-cp313-cp313-win32.whl", hash = "sha256:7ce61d9bc2887ce0fdc847ae84a0e7e6f0e011437208e402836a5b5e3306348c", size = 1746933 },
-    { url = "https://files.pythonhosted.org/packages/4f/1e/6d76d051e6dece03a2d2394c68515cf500b33260ed845dc2010f079b7ebc/outlines_core-0.2.9-cp313-cp313-win_amd64.whl", hash = "sha256:70d4c665b86df2e98ac34c1cfae416762904b972aef207fab82c58f08cb56e64", size = 2037628 },
-]
-
-[[package]]
 name = "overrides"
 version = "7.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2013,7 +1989,6 @@ dependencies = [
     { name = "greenery" },
     { name = "httpx" },
     { name = "jupyter" },
-    { name = "outlines-core" },
     { name = "pytest" },
     { name = "textual" },
     { name = "textual-dev" },
@@ -2027,7 +2002,6 @@ requires-dist = [
     { name = "greenery", specifier = ">=4.2.2" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "jupyter", specifier = ">=1.1.1" },
-    { name = "outlines-core", specifier = ">=0.2.9" },
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "textual", specifier = ">=2.1.2" },
     { name = "textual-dev", specifier = ">=1.7.0" },
